@@ -1,0 +1,40 @@
+import { format, parseISO, startOfWeek } from "date-fns";
+import type { Application } from "@/lib/types";
+
+export function computeMetrics(applications: Application[]) {
+  const total = applications.length;
+  const active = applications.filter((item) =>
+    ["Applied", "Screening", "Interview", "Technical"].includes(item.status),
+  ).length;
+  const rejected = applications.filter((item) => item.status === "Rejected").length;
+  const interviews = applications.filter((item) =>
+    ["Interview", "Technical"].includes(item.status),
+  ).length;
+  const offers = applications.filter((item) => item.status === "Offer").length;
+
+  const statusMap = new Map<string, number>();
+  const sourceMap = new Map<string, number>();
+  const weeklyMap = new Map<string, number>();
+
+  for (const application of applications) {
+    statusMap.set(application.status, (statusMap.get(application.status) ?? 0) + 1);
+
+    const source = application.source?.trim() || "Unknown";
+    sourceMap.set(source, (sourceMap.get(source) ?? 0) + 1);
+
+    const week = format(startOfWeek(parseISO(application.application_date), { weekStartsOn: 1 }), "yyyy-MM-dd");
+    weeklyMap.set(week, (weeklyMap.get(week) ?? 0) + 1);
+  }
+
+  const statusData = Array.from(statusMap, ([name, value]) => ({ name, value }));
+  const sourceData = Array.from(sourceMap, ([name, value]) => ({ name, value })).sort(
+    (a, b) => b.value - a.value,
+  );
+  const weeklyData = Array.from(weeklyMap, ([weekStart, count]) => ({
+    weekStart,
+    label: format(parseISO(weekStart), "MMM dd"),
+    count,
+  })).sort((a, b) => a.weekStart.localeCompare(b.weekStart));
+
+  return { total, active, rejected, interviews, offers, statusData, sourceData, weeklyData };
+}
