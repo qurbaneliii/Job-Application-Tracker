@@ -3,6 +3,7 @@
 import { formatDistanceStrict, parseISO } from "date-fns";
 import { Pencil, Trash2 } from "lucide-react";
 import { APPLICATION_STATUSES } from "@/lib/constants";
+import { computeResponseTimeDays, isFollowUpOverdue } from "@/lib/queries";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -34,6 +35,7 @@ export function ApplicationsTable({ applications, onUpdate, onDelete, onStatusCh
           <TableHead>Company</TableHead>
           <TableHead>Position</TableHead>
           <TableHead>Status</TableHead>
+          <TableHead>Source</TableHead>
           <TableHead>Applied</TableHead>
           <TableHead>Follow Up</TableHead>
           <TableHead>Response</TableHead>
@@ -42,10 +44,7 @@ export function ApplicationsTable({ applications, onUpdate, onDelete, onStatusCh
       </TableHeader>
       <TableBody>
         {applications.map((application) => {
-          const overdue =
-            application.follow_up_date &&
-            new Date(application.follow_up_date).getTime() < new Date().setHours(0, 0, 0, 0) &&
-            !["Rejected", "Offer"].includes(application.status);
+          const overdue = isFollowUpOverdue(application);
 
           return (
             <TableRow key={application.id} className={overdue ? "bg-destructive/10" : ""}>
@@ -59,15 +58,16 @@ export function ApplicationsTable({ applications, onUpdate, onDelete, onStatusCh
                   <SelectTrigger className="w-44">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    {APPLICATION_STATUSES.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {status}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </TableCell>
+                    <SelectContent>
+                      {APPLICATION_STATUSES.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {status.replace("_", " ")}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+              <TableCell>{application.source}</TableCell>
               <TableCell>{application.application_date}</TableCell>
               <TableCell>
                 {application.follow_up_date ? (
@@ -77,8 +77,8 @@ export function ApplicationsTable({ applications, onUpdate, onDelete, onStatusCh
                 )}
               </TableCell>
               <TableCell>
-                {application.response_time_days !== null
-                  ? `${application.response_time_days} day(s)`
+                {["offer", "rejected", "no_response"].includes(application.status)
+                  ? `${computeResponseTimeDays(application.application_date)} day(s)`
                   : formatDistanceStrict(parseISO(application.application_date), new Date(), { unit: "day" })}
               </TableCell>
               <TableCell className="text-right">

@@ -3,14 +3,11 @@ import type { Application } from "@/lib/types";
 
 export function computeMetrics(applications: Application[]) {
   const total = applications.length;
-  const active = applications.filter((item) =>
-    ["Applied", "Screening", "Interview", "Technical"].includes(item.status),
-  ).length;
-  const rejected = applications.filter((item) => item.status === "Rejected").length;
   const interviews = applications.filter((item) =>
-    ["Interview", "Technical"].includes(item.status),
+    ["interview", "technical"].includes(item.status),
   ).length;
-  const offers = applications.filter((item) => item.status === "Offer").length;
+  const rejected = applications.filter((item) => item.status === "rejected").length;
+  const offers = applications.filter((item) => item.status === "offer").length;
 
   const statusMap = new Map<string, number>();
   const sourceMap = new Map<string, number>();
@@ -36,5 +33,5 @@ export function computeMetrics(applications: Application[]) {
     count,
   })).sort((a, b) => a.weekStart.localeCompare(b.weekStart));
 
-  return { total, active, rejected, interviews, offers, statusData, sourceData, weeklyData };
+  return { total, rejected, interviews, offers, statusData, sourceData, weeklyData };
 }

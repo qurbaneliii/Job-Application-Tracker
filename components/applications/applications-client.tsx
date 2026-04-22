@@ -10,6 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSupabaseClient } from "@/components/providers/supabase-provider";
 import type { Application, ApplicationInput, ApplicationStatus } from "@/lib/types";
+import {
+  createApplicationForUser,
+  deleteApplicationForUser,
+  getApplicationsForUser,
+  updateApplicationForUser,
+} from "@/lib/queries";
 
 type ApplicationsClientProps = {
   userId: string;
@@ -42,17 +48,12 @@ export function ApplicationsClient({ userId, initialApplications }: Applications
     setLoading(true);
     setError(null);
 
-    const payload = mapInputToPayload(value);
-    const { data, error: queryError } = await supabase
-      .from("applications")
-      .insert({ ...payload, user_id: userId })
-      .select("*")
-      .single();
+    const { data, error: queryError } = await createApplicationForUser(supabase, userId, value);
 
     if (queryError) {
-      setError(queryError.message);
+      setError(queryError);
     } else if (data) {
-      setApplications((current) => [data as Application, ...current]);
+      setApplications((current) => [data, ...current]);
     }
 
     setLoading(false);
@@ -62,19 +63,12 @@ export function ApplicationsClient({ userId, initialApplications }: Applications
     setLoading(true);
     setError(null);
 
-    const payload = mapInputToPayload(value);
-    const { data, error: queryError } = await supabase
-      .from("applications")
-      .update(payload)
-      .eq("id", id)
-      .eq("user_id", userId)
-      .select("*")
-      .single();
+    const { data, error: queryError } = await updateApplicationForUser(supabase, userId, id, value);
 
     if (queryError) {
-      setError(queryError.message);
+      setError(queryError);
     } else if (data) {
-      setApplications((current) => current.map((item) => (item.id === id ? (data as Application) : item)));
+      setApplications((current) => current.map((item) => (item.id === id ? data : item)));
     }
 
     setLoading(false);
@@ -94,14 +88,27 @@ export function ApplicationsClient({ userId, initialApplications }: Applications
     setLoading(true);
     setError(null);
 
-    const { error: queryError } = await supabase.from("applications").delete().eq("id", id).eq("user_id", userId);
+    const { error: queryError } = await deleteApplicationForUser(supabase, userId, id);
 
     if (queryError) {
-      setError(queryError.message);
+      setError(queryError);
     } else {
       setApplications((current) => current.filter((item) => item.id !== id));
     }
 
+    setLoading(false);
+  };
+
+  const refreshApplications = async () => {
+    setLoading(true);
+    setError(null);
+
+    const { data, error: queryError } = await getApplicationsForUser(supabase, userId);
+    if (queryError) {
+      setError(queryError);
+    } else {
+      setApplications(data);
+    }
     setLoading(false);
   };
 
@@ -145,6 +152,11 @@ export function ApplicationsClient({ userId, initialApplications }: Applications
       </div>
       {loading ? <p className="text-sm text-muted-foreground">Saving changes...</p> : null}
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {!loading && error ? (
+        <Button variant="outline" onClick={() => void refreshApplications()} className="w-fit">
+          Retry loading data
+        </Button>
+      ) : null}
       <ApplicationsTable
         applications={filtered}
         onUpdate={updateApplication}
@@ -155,40 +167,20 @@ export function ApplicationsClient({ userId, initialApplications }: Applications
   );
 }
 
-function mapInputToPayload(input: ApplicationInput) {
-  return {
-    ...input,
-    location: nullable(input.location),
-    source: nullable(input.source),
-    contact_person: nullable(input.contact_person),
-    contact_email: nullable(input.contact_email),
-    cv_version: nullable(input.cv_version),
-    interview_date: nullable(input.interview_date),
-    follow_up_date: nullable(input.follow_up_date),
-    notes: nullable(input.notes),
-    job_post_link: nullable(input.job_post_link),
-  };
-}
-
 function mapApplicationToInput(value: Application): ApplicationInput {
   return {
     company: value.company,
     position: value.position,
+    job_link: value.job_link ?? "",
     location: value.location ?? "",
     work_type: value.work_type,
     application_date: value.application_date,
     status: value.status,
-    source: value.source ?? "",
-    contact_person: value.contact_person ?? "",
-    contact_email: value.contact_email ?? "",
-    cv_version: value.cv_version ?? "",
+    source: value.source,
     interview_date: value.interview_date ?? "",
     follow_up_date: value.follow_up_date ?? "",
+    contact_person: value.contact_person ?? "",
+    contact_email: value.contact_email ?? "",
     notes: value.notes ?? "",
-    job_post_link: value.job_post_link ?? "",
   };
-}
-
-function nullable(value: string | null | undefined) {
-  return value && value.trim() ? value.trim() : null;
 }

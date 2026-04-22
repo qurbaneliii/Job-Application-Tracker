@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { z } from "zod";
-import { APPLICATION_STATUSES, WORK_TYPES } from "@/lib/constants";
+import { APPLICATION_SOURCES, APPLICATION_STATUSES, WORK_TYPES } from "@/lib/constants";
 import { applicationSchema } from "@/lib/validation";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -15,18 +15,17 @@ import type { Application, ApplicationInput } from "@/lib/types";
 const defaultValues: ApplicationInput = {
   company: "",
   position: "",
+  job_link: "",
   location: "",
-  work_type: "Remote",
+  work_type: "remote",
   application_date: new Date().toISOString().slice(0, 10),
-  status: "Applied",
-  source: "",
-  contact_person: "",
-  contact_email: "",
-  cv_version: "",
+  status: "applied",
+  source: "other",
   interview_date: "",
   follow_up_date: "",
+  contact_person: "",
+  contact_email: "",
   notes: "",
-  job_post_link: "",
 };
 
 type ApplicationFormDialogProps = {
@@ -65,15 +64,14 @@ export function ApplicationFormDialog({ mode, value, trigger, onSubmit }: Applic
       const parsed = applicationSchema.parse(form);
       const normalized: ApplicationInput = {
         ...parsed,
+        job_link: parsed.job_link || "",
         location: parsed.location || "",
-        source: parsed.source || "",
-        contact_person: parsed.contact_person || "",
-        contact_email: parsed.contact_email || "",
-        cv_version: parsed.cv_version || "",
+        source: parsed.source,
         interview_date: parsed.interview_date || "",
         follow_up_date: parsed.follow_up_date || "",
+        contact_person: parsed.contact_person || "",
+        contact_email: parsed.contact_email || "",
         notes: parsed.notes || "",
-        job_post_link: parsed.job_post_link || "",
       };
       await onSubmit(normalized);
       setOpen(false);
@@ -112,11 +110,11 @@ export function ApplicationFormDialog({ mode, value, trigger, onSubmit }: Applic
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {WORK_TYPES.map((item) => (
-                  <SelectItem key={item} value={item}>
-                    {item}
-                  </SelectItem>
-                ))}
+                  {WORK_TYPES.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item[0].toUpperCase() + item.slice(1)}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </Field>
@@ -131,14 +129,25 @@ export function ApplicationFormDialog({ mode, value, trigger, onSubmit }: Applic
               <SelectContent>
                 {APPLICATION_STATUSES.map((item) => (
                   <SelectItem key={item} value={item}>
-                    {item}
+                    {item.replace("_", " ")}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </Field>
           <Field label="Source">
-            <Input value={form.source ?? ""} onChange={(e) => update("source", e.target.value)} />
+            <Select value={form.source} onValueChange={(v) => update("source", v as ApplicationInput["source"])}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {APPLICATION_SOURCES.map((item) => (
+                  <SelectItem key={item} value={item}>
+                    {item}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
           <Field label="Contact Person">
             <Input value={form.contact_person ?? ""} onChange={(e) => update("contact_person", e.target.value)} />
@@ -150,17 +159,14 @@ export function ApplicationFormDialog({ mode, value, trigger, onSubmit }: Applic
               onChange={(e) => update("contact_email", e.target.value)}
             />
           </Field>
-          <Field label="CV Version">
-            <Input value={form.cv_version ?? ""} onChange={(e) => update("cv_version", e.target.value)} />
-          </Field>
           <Field label="Interview Date">
             <Input type="date" value={form.interview_date ?? ""} onChange={(e) => update("interview_date", e.target.value)} />
           </Field>
           <Field label="Follow Up Date">
             <Input type="date" value={form.follow_up_date ?? ""} onChange={(e) => update("follow_up_date", e.target.value)} />
           </Field>
-          <Field label="Job Post Link" className="md:col-span-2" error={errors.job_post_link}>
-            <Input value={form.job_post_link ?? ""} onChange={(e) => update("job_post_link", e.target.value)} />
+          <Field label="Job Link" className="md:col-span-2" error={errors.job_link}>
+            <Input value={form.job_link ?? ""} onChange={(e) => update("job_link", e.target.value)} />
           </Field>
           <Field label="Notes" className="md:col-span-2">
             <Textarea value={form.notes ?? ""} onChange={(e) => update("notes", e.target.value)} />
@@ -201,17 +207,16 @@ function mapToInput(value: Application): ApplicationInput {
   return {
     company: value.company,
     position: value.position,
+    job_link: value.job_link ?? "",
     location: value.location ?? "",
     work_type: value.work_type,
     application_date: value.application_date,
     status: value.status,
-    source: value.source ?? "",
-    contact_person: value.contact_person ?? "",
-    contact_email: value.contact_email ?? "",
-    cv_version: value.cv_version ?? "",
+    source: value.source,
     interview_date: value.interview_date ?? "",
     follow_up_date: value.follow_up_date ?? "",
+    contact_person: value.contact_person ?? "",
+    contact_email: value.contact_email ?? "",
     notes: value.notes ?? "",
-    job_post_link: value.job_post_link ?? "",
   };
 }

@@ -27,10 +27,10 @@ export function DashboardClient({ applications }: { applications: Application[] 
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <StatCard title="Total Applications" value={metrics.total} icon={Briefcase} />
-        <StatCard title="Active" value={metrics.active} icon={Hourglass} />
-        <StatCard title="Rejected" value={metrics.rejected} icon={CircleX} />
         <StatCard title="Interviews" value={metrics.interviews} icon={FileClock} />
         <StatCard title="Offers" value={metrics.offers} icon={Handshake} />
+        <StatCard title="Rejected" value={metrics.rejected} icon={CircleX} />
+        <StatCard title="No Response" value={metrics.statusData.find((item) => item.name === "no_response")?.value ?? 0} icon={Hourglass} />
       </div>
       <div className="grid gap-4 xl:grid-cols-3">
         <Card>

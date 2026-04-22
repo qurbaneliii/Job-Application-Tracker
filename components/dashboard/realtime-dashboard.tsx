@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSupabaseClient } from "@/components/providers/supabase-provider";
 import { DashboardClient } from "@/components/dashboard/dashboard-client";
+import { getApplicationsForUser } from "@/lib/queries";
 import type { Application } from "@/lib/types";
 
 type RealtimeDashboardProps = {
@@ -19,19 +20,17 @@ export function RealtimeDashboard({ userId, initialData }: RealtimeDashboardProp
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      const { data, error: queryError } = await supabase
-        .from("applications")
-        .select("*")
-        .eq("user_id", userId)
-        .order("application_date", { ascending: false });
+      const { data, error: queryError } = await getApplicationsForUser(supabase, userId);
 
       if (queryError) {
-        setError(queryError.message);
+        setError(queryError);
       } else {
-        setApplications((data as Application[]) ?? []);
+        setApplications(data);
       }
       setLoading(false);
     };
+
+    void load();
 
     const channel = supabase
       .channel(`applications-user-${userId}`)
