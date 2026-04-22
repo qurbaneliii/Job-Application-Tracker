@@ -6,5 +6,9 @@ function getRequiredEnv(key: "NEXT_PUBLIC_SUPABASE_URL" | "NEXT_PUBLIC_SUPABASE_
   return value;
 }
 
-export const supabaseUrl = getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL");
-export const supabaseAnonKey = getRequiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+export function getSupabaseEnv() {
+  return {
+    supabaseUrl: getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL"),
+    supabaseAnonKey: getRequiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+  };
+}

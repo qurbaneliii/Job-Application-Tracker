@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { supabaseAnonKey, supabaseUrl } from "@/lib/supabase/env";
+import { getSupabaseEnv } from "@/lib/supabase/env";
 
 const protectedRoutes = ["/dashboard", "/applications"];
 
@@ -9,6 +9,7 @@ function isProtectedRoute(pathname: string) {
 }
 
 export async function updateSession(request: NextRequest) {
+  const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv();
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
